@@ -3,40 +3,80 @@
     <!-- Toolbar -->
     <v-app-bar app color="blue" dark elevation="4">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      
       <v-toolbar-title>App Instituto</v-toolbar-title>
-
       <v-spacer />
-
-      <!-- Botão de busca -->
-      <v-btn icon @click="showSearchDialog = true">
-        <v-icon>mdi-magnify</v-icon>
+      
+      <!-- Ícone de perfil do usuário -->
+      <v-btn icon @click="profileDrawer = true">
+        <v-avatar size="36">
+          <template v-if="userPhoto">
+            <img :src="userPhoto" alt="Perfil" />
+          </template>
+          <template v-else>
+            <v-icon large color="white">mdi-account</v-icon>
+          </template>
+        </v-avatar>
       </v-btn>
+    </v-app-bar>
 
-      <!-- Menu da toolbar -->
-      <v-menu offset-y>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn icon v-bind="attrs" v-on="on">
-            <v-icon>mdi-dots-vertical</v-icon>
-          </v-btn>
-        </template>
+    <!-- Barra lateral de perfil do usuário -->
+    <v-navigation-drawer
+      v-model="profileDrawer"
+      right
+      temporary
+      width="300"
+    >
+      <v-list>
+        <v-list-item>
+          <v-avatar size="48" class="mr-3">
+            <template v-if="userPhoto">
+              <img :src="userPhoto" alt="Perfil" />
+            </template>
+            <template v-else>
+              <v-icon large color="grey lighten-1">mdi-account</v-icon>
+            </template>
+          </v-avatar>
+          <span class="text-h6">{{ userName }}</span>
+        </v-list-item>
+        <v-divider />
+        <v-list-item @click="showProfile">
+          <v-list-item-icon><v-icon>mdi-account</v-icon></v-list-item-icon>
+          <v-list-item-title>Visualizar Perfil</v-list-item-title>
+        </v-list-item>
+        <v-list-item @click="logout">
+          <v-list-item-icon><v-icon>mdi-logout</v-icon></v-list-item-icon>
+          <v-list-item-title>Sair</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+
+    <!-- Modal de opções do usuário -->
+    <v-dialog v-model="showUserMenu" max-width="300px">
+      <v-card>
+        <v-card-title>
+          <v-avatar size="48" class="mr-3">
+            <template v-if="userPhoto">
+              <img :src="userPhoto" alt="Perfil" />
+            </template>
+            <template v-else>
+              <v-icon large color="grey lighten-1">mdi-account</v-icon>
+            </template>
+          </v-avatar>
+          <span class="text-h6">{{ userName }}</span>
+        </v-card-title>
+        <v-divider />
         <v-list>
           <v-list-item @click="showProfile">
             <v-list-item-icon><v-icon>mdi-account</v-icon></v-list-item-icon>
-            <v-list-item-title>Perfil</v-list-item-title>
+            <v-list-item-title>Visualizar Perfil</v-list-item-title>
           </v-list-item>
-          <v-list-item @click="showSettings">
-            <v-list-item-icon><v-icon>mdi-cog</v-icon></v-list-item-icon>
-            <v-list-item-title>Configurações</v-list-item-title>
-          </v-list-item>
-          <v-divider />
           <v-list-item @click="logout">
             <v-list-item-icon><v-icon>mdi-logout</v-icon></v-list-item-icon>
             <v-list-item-title>Sair</v-list-item-title>
           </v-list-item>
         </v-list>
-      </v-menu>
-    </v-app-bar>
+      </v-card>
+    </v-dialog>
 
     <!-- Menu lateral -->
     <v-navigation-drawer v-model="drawer" app temporary>
@@ -57,6 +97,7 @@
     </v-navigation-drawer>
 
     <!-- Dialog de busca -->
+    <!--
     <v-dialog v-model="showSearchDialog" max-width="500px">
       <v-card>
         <v-card-title><span class="text-h5">Buscar</span></v-card-title>
@@ -74,6 +115,112 @@
           <v-spacer />
           <v-btn text color="grey" @click="showSearchDialog = false">Cancelar</v-btn>
           <v-btn text color="blue darken-1" @click="performSearch">Buscar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    -->
+
+    <!-- Dialog de cadastro de famílias -->
+    <v-dialog v-model="showFamilyDialog" max-width="500px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Cadastrar Família</span>
+        </v-card-title>
+        <v-card-text>
+          <v-text-field v-model="familyData.nomeTitular" label="Nome do titular" outlined />
+          <v-text-field v-model="familyData.dataNascimento" label="Data de nascimento" outlined type="date" />
+          <v-text-field v-model="familyData.endereco" label="Endereço completo" outlined />
+          <v-text-field v-model="familyData.qtdPessoas" label="Quantidade de pessoas na casa" outlined type="number" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text color="grey" @click="showFamilyDialog = false">Cancelar</v-btn>
+          <v-btn text color="primary" @click="submitFamily">Cadastrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog de estoque -->
+    <v-dialog v-model="showStockDialog" max-width="400px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Quantidade de Itens no Estoque</span>
+        </v-card-title>
+        <v-card-text>
+          <div v-for="item in estoqueItens" :key="item.nome" class="mb-2">
+            <strong>{{ item.nome }}:</strong> {{ item.quantidade }}
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text color="primary" @click="showStockDialog = false">Fechar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog de doadores -->
+    <v-dialog v-model="showDonorDialog" max-width="500px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Cadastrar Doador</span>
+        </v-card-title>
+        <v-card-text>
+          <v-text-field v-model="donorData.nome" label="Nome do doador" outlined />
+          <v-text-field v-model="donorData.item" label="Item doado" outlined />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text color="grey" @click="showDonorDialog = false">Cancelar</v-btn>
+          <v-btn text color="primary" @click="submitDonor">Salvar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog de dashboard -->
+    <v-dialog v-model="showDashboardDialog" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Dashboard de Doações</span>
+        </v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="12">
+              <canvas id="donationChart"></canvas>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text color="primary" @click="showDashboardDialog = false">Fechar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog de estoque financeiro -->
+    <v-dialog v-model="showFinanceDialog" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Estoque Financeiro</span>
+        </v-card-title>
+        <v-card-text>
+          <v-simple-table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in estoqueFinanceiro" :key="item.nome">
+                <td>{{ item.nome }}</td>
+                <td>{{ item.quantidade }}</td>
+              </tr>
+            </tbody>
+          </v-simple-table>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text color="primary" @click="showFinanceDialog = false">Fechar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -104,7 +251,7 @@
 
                 <v-row>
                   <v-col cols="12" sm="6" md="4" v-for="item in homeCards" :key="item.title">
-                    <v-card outlined hover @click="selectMenuItem(item)">
+                    <v-card outlined hover @click="handleCardClick(item)">
                       <v-card-text class="text-center">
                         <v-icon large :color="item.color" class="mb-2">{{ item.icon }}</v-icon>
                         <div class="text-h6">{{ item.title }}</div>
@@ -140,6 +287,7 @@
 </template>
 
 <script>
+import Chart from 'chart.js/auto';
 
 export default {
   name: "App",
@@ -148,8 +296,9 @@ export default {
       logoUrl:
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQ8i5CQNh9Kt14yLwzKEKOQEI5HOEF_gmXvw&s",
       drawer: false,
-      showSearchDialog: false,
-      searchQuery: "",
+      profileDrawer: false, // Novo estado para a barra lateral de perfil
+      userPhoto: "https://randomuser.me/api/portraits/men/32.jpg", // Foto de perfil
+      userName: "João Vitor", // Nome do usuário
       showSnackbar: false,
       snackbarMessage: "",
       snackbarColor: "success",
@@ -171,6 +320,33 @@ export default {
         { title: "Dashboard de Doações", desc: "Visualize dados e estatísticas", icon: "mdi-view-dashboard", color: "green" },
         { title: "Estoque Financeiro", desc: "Gerencie alimentos e dinheiro", icon: "mdi-food", color: "orange" },
       ],
+
+      // Novo estado para o diálogo de cadastro de famílias
+      showFamilyDialog: false,
+      familyData: {
+        nomeTitular: "",
+        dataNascimento: "",
+        endereco: "",
+        qtdPessoas: "",
+      },
+      showStockDialog: false,
+      estoqueItens: [
+        { nome: "Arroz", quantidade: 120 },
+        { nome: "Feijão", quantidade: 80 },
+        { nome: "Macarrão", quantidade: 50 },
+      ],
+      showDonorDialog: false,
+      donorData: {
+        nome: "",
+        item: "",
+      },
+      showDashboardDialog: false,
+      showFinanceDialog: false,
+      estoqueFinanceiro: [
+        { nome: "Arroz", quantidade: 120 },
+        { nome: "Dinheiro", quantidade: 500 },
+        { nome: "Feijão", quantidade: 80 },
+      ],
     };
   },
   methods: {
@@ -184,22 +360,113 @@ export default {
       this.notify("Você saiu da aplicação.", "error");
     },
     selectMenuItem(item) {
-      this.notify(`Navegando para ${item.title}`, "primary");
-    },
-    performSearch() {
-      if (!this.searchQuery) {
-        this.notify("Digite algo para buscar!", "warning");
-        return;
+      switch (item.title) {
+        case "Cadastrar Famílias":
+          this.showFamilyDialog = true;
+          break;
+        case "Controle de Estoque":
+          this.showStockDialog = true;
+          break;
+        case "Controle de Doadores":
+          this.showDonorDialog = true;
+          break;
+        case "Dashboard de Doações":
+          this.showDashboardDialog = true;
+          this.$nextTick(this.renderChart);
+          break;
+        case "Estoque Financeiro":
+        case "Estoque (Alimentos e Dinheiro)":
+          this.showFinanceDialog = true;
+          break;
+        default:
+          this.notify(`Navegando para ${item.title}`, "primary");
       }
-      this.notify(`Buscando por: ${this.searchQuery}`, "success");
-      this.showSearchDialog = false;
-      this.searchQuery = "";
     },
     notify(message, color = "success") {
       this.snackbarMessage = message;
       this.snackbarColor = color;
       this.showSnackbar = true;
     },
+    // Novo método para lidar com o clique no cartão
+    handleCardClick(item) {
+      switch (item.title) {
+        case "Cadastrar Famílias":
+          this.showFamilyDialog = true;
+          break;
+        case "Controle de Estoque":
+          this.showStockDialog = true;
+          break;
+        case "Controle de Doadores":
+          this.showDonorDialog = true;
+          break;
+        case "Dashboard de Doações":
+          this.showDashboardDialog = true;
+          this.$nextTick(this.renderChart);
+          break;
+        case "Estoque Financeiro":
+        case "Estoque (Alimentos e Dinheiro)":
+          this.showFinanceDialog = true;
+          break;
+        default:
+          this.notify(`Navegando para ${item.title}`, "primary");
+      }
+    },
+    // Novo método para enviar o formulário de cadastro de famílias
+    submitFamily() {
+      const { nomeTitular, dataNascimento, endereco, qtdPessoas } = this.familyData;
+      if (!nomeTitular || !dataNascimento || !endereco || !qtdPessoas) {
+        this.notify("Preencha todos os campos!", "warning");
+        return;
+      }
+      this.notify(`Família "${nomeTitular}" cadastrada com sucesso!`, "success");
+      this.showFamilyDialog = false;
+      this.familyData = { nomeTitular: "", dataNascimento: "", endereco: "", qtdPessoas: "" };
+    },
+    submitDonor() {
+      const { nome, item } = this.donorData;
+      if (!nome || !item) {
+        this.notify("Preencha todos os campos!", "warning");
+        return;
+      }
+      this.notify(`Doador "${nome}" cadastrou o item "${item}"!`, "success");
+      this.showDonorDialog = false;
+      this.donorData = { nome: "", item: "" };
+    },
+    submitStock() {
+      this.showStockDialog = false;
+    },
+    submitFinance() {
+      this.showFinanceDialog = false;
+    },
+    renderChart() {
+      const ctx = document.getElementById('donationChart');
+      if (!ctx) return;
+      if (this._chart) {
+        this._chart.destroy();
+      }
+      this._chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Dia', 'Mês', 'Ano'],
+          datasets: [{
+            label: 'Doações',
+            data: [12, 50, 320],
+            backgroundColor: ['#1976D2', '#43A047', '#FF9800'],
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    },
   },
+  beforeDestroy() {
+    if (this._chart) {
+      this._chart.destroy();
+    }
+  }
 };
 </script>
